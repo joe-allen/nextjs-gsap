@@ -1,0 +1,464 @@
+// ---- Variables
+
+// Common Breakpoints
+$b-small: 550px;
+$b-medium: 768px;
+$b-medium-large: 1024px;
+$b-large: 1200px;
+$b-xlarge: 1400px;
+$b-xxlarge: 1600px;
+$b-maxspacing: 1920px;
+$b-minspacing: 360px;
+
+// element vars
+$e-nav-height: 127px;
+$e-nav-width-max: 200px;
+$e-nav-width-min: 125px;
+$e-nav-width-small: 80px;
+
+// Typography
+$t-body-font: 'Gilroy', -apple-system, system-ui, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif,
+  'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+$t-heading-font: 'Gilroy', -apple-system, system-ui, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif,
+  'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+$t-base-text: 16px;
+$t-line-height: 2.15;
+$t-type-scale-l: 1.25;
+$t-type-scale-s: 1.25;
+
+// Colors
+$c-primary: #00a3a1; // most common version of their brand color
+$c-primary-light: saturate(lighten($c-primary, 8%), 5%); // shows up better against the dark bg
+$c-secondary: #24436b;
+$c-tertiary: #75cac9;
+$c-accent: #fe5c2c;
+$c-text: #252525;
+$c-text-secondary: #e0e4e8;
+
+$text-shadow: 0px 1px 60px rgba(0, 0, 0, 01);
+
+// Misc
+$max-xlcontent: 2072px;
+$max-content: 1800px;
+$max-wysiwyg: 900px;
+$max-form: 880px;
+
+// ---- Mixins
+
+// Helpers
+@function pow($number, $exponent) {
+  $value: 1;
+
+  @if $exponent>0 {
+    @for $i from 1 through $exponent {
+      $value: $value * $number;
+    }
+  }
+
+  @return $value;
+}
+
+@function strip-unit($number) {
+  @if type-of($number) == 'number' and not unitless($number) {
+    @return $number / ($number * 0 + 1);
+  }
+
+  @return $number;
+}
+
+@function decimal-round($number, $digits: 0, $mode: round) {
+  $n: 1;
+
+  // $number must be a number
+  @if type-of($number) !=number {
+    @warn '#{ $number } is not a number.';
+    @return $number;
+  }
+
+  // $digits must be a unitless number
+  @if type-of($digits) !=number {
+    @warn '#{ $digits } is not a number.';
+    @return $number;
+  } @else if not unitless($digits) {
+    @warn '#{ $digits } has a unit.';
+    @return $number;
+  }
+
+  @if $digits>0 {
+    @for $i from 1 through $digits {
+      $n: $n * 10;
+    }
+  }
+
+  @if $mode==round {
+    @return round($number * $n) / $n;
+  } @else if $mode==ceil {
+    @return ceil($number * $n) / $n;
+  } @else if $mode==floor {
+    @return floor($number * $n) / $n;
+  } @else {
+    @warn '#{ $mode } is undefined keyword.';
+    @return $number;
+  }
+}
+
+@mixin locked-spacing(
+  $use-side-a: true,
+  $use-side-b: true,
+  $type: margin,
+  $modifier: 1,
+  $media: true,
+  $current-raw: 9999,
+  $raw-max: 100px,
+  $axis: 'vertical',
+  $floor: $b-small,
+  $min: null
+) {
+  $side-a: '';
+  $side-b: '';
+
+  @if $axis== 'horizontal' {
+    $side-a: 'left';
+    $side-b: 'right';
+  } @else {
+    $side-a: 'top';
+    $side-b: 'bottom';
+  }
+
+  $max: $raw-max * $modifier;
+  $tween: strip-unit($max) / strip-unit($b-maxspacing) * 100vw;
+
+  @if $min==null {
+    $min: strip-unit($tween) / 100 * $floor;
+  } @else {
+    $min: $min * $modifier;
+    $floor: decimal-round($min / (strip-unit($tween) / 100), 0, floor);
+
+    @if $floor < 0 {
+      $floor: $floor * -1;
+    }
+  }
+
+  $current: strip-unit($current-raw);
+
+  @if $media {
+    @if $current>$b-maxspacing {
+      @if $use-side-a {
+        #{$type}-#{$side-a}: $max;
+      }
+
+      @if $use-side-b {
+        #{$type}-#{$side-b}: $max;
+      }
+
+      @media only screen and (max-width: $b-maxspacing) {
+        @if $use-side-a {
+          #{$type}-#{$side-a}: $tween;
+        }
+
+        @if $use-side-b {
+          #{$type}-#{$side-b}: $tween;
+        }
+      }
+
+      @media only screen and (max-width: $floor) {
+        @if $use-side-a {
+          #{$type}-#{$side-a}: $min;
+        }
+
+        @if $use-side-b {
+          #{$type}-#{$side-b}: $min;
+        }
+      }
+    } @else if $current>strip-unit($floor) {
+      @if $use-side-a {
+        #{$type}-#{$side-a}: $tween;
+      }
+
+      @if $use-side-b {
+        #{$type}-#{$side-b}: $tween;
+      }
+
+      @media only screen and (max-width: $floor) {
+        @if $use-side-a {
+          #{$type}-#{$side-a}: $min;
+        }
+
+        @if $use-side-b {
+          #{$type}-#{$side-b}: $min;
+        }
+      }
+    } @else {
+      @if $use-side-a {
+        #{$type}-#{$side-a}: $min;
+      }
+
+      @if $use-side-b {
+        #{$type}-#{$side-b}: $min;
+      }
+    }
+  } @else {
+    @if $current>strip-unit($b-maxspacing) {
+      @if $use-side-a {
+        #{$type}-#{$side-a}: $max;
+      }
+
+      @if $use-side-b {
+        #{$type}-#{$side-b}: $max;
+      }
+    } @else if $current>strip-unit($floor) {
+      @if $use-side-a {
+        #{$type}-#{$side-a}: $tween;
+      }
+
+      @if $use-side-b {
+        #{$type}-#{$side-b}: $tween;
+      }
+    } @else {
+      @if $use-side-a {
+        #{$type}-#{$side-a}: $min;
+      }
+
+      @if $use-side-b {
+        #{$type}-#{$side-b}: $min;
+      }
+    }
+  }
+}
+
+@mixin responsive-type($large: 1rem, $small: 1rem, $media: true, $current: 9999) {
+  @if $media {
+    @if $current>=strip-unit($b-medium) {
+      font-size: $large;
+
+      @media screen and (max-width: $b-medium) {
+        font-size: $small;
+      }
+    }
+
+    @if $current < strip-unit($b-medium) {
+      font-size: $small;
+    }
+  } @else {
+    @if $current>strip-unit($b-medium) {
+      font-size: $large;
+    } @else {
+      font-size: $small;
+    }
+  }
+}
+
+// Type sizing
+$type-scale-step-giga-l: 9;
+$type-scale-step-giga-s: 3;
+$body-giga-l: pow($t-type-scale-l, $type-scale-step-giga-l) * 1rem;
+$body-giga-s: pow($t-type-scale-s, $type-scale-step-giga-s) * 1rem;
+
+@mixin body-giga($media: true, $current: 9999) {
+  @include responsive-type($body-giga-l, $body-giga-s, $media, $current);
+}
+
+$type-scale-step-mega-l: 8;
+$type-scale-step-mega-s: 3;
+$body-mega-l: pow($t-type-scale-l, $type-scale-step-mega-l) * 1rem;
+$body-mega-s: pow($t-type-scale-s, $type-scale-step-mega-s) * 1rem;
+
+@mixin body-mega($media: true, $current: 9999) {
+  @include responsive-type($body-mega-l, $body-mega-s, $media, $current);
+}
+
+$type-scale-step-kilo-l: 7;
+$type-scale-step-kilo-s: 5;
+$body-kilo-l: pow($t-type-scale-l, $type-scale-step-kilo-l) * 1rem;
+$body-kilo-s: pow($t-type-scale-s, $type-scale-step-kilo-s) * 1rem;
+
+@mixin body-kilo($media: true, $current: 9999) {
+  @include responsive-type($body-kilo-l, $body-kilo-s, $media, $current);
+}
+
+$type-scale-step-alpha-l: 5;
+$type-scale-step-alpha-s: 2;
+$body-alpha-l: pow($t-type-scale-l, $type-scale-step-alpha-l) * 1rem;
+$body-alpha-s: pow($t-type-scale-s, $type-scale-step-alpha-s) * 1rem;
+
+@mixin body-alpha($media: true, $current: 9999) {
+  @include responsive-type($body-alpha-l, $body-alpha-s, $media, $current);
+}
+
+$type-scale-step-beta-l: 4;
+$type-scale-step-beta-s: 1;
+$body-beta-l: pow($t-type-scale-l, $type-scale-step-beta-l) * 1rem;
+$body-beta-s: pow($t-type-scale-s, $type-scale-step-beta-s) * 1rem;
+
+@mixin body-beta($media: true, $current: 9999) {
+  @include responsive-type($body-beta-l, $body-beta-s, $media, $current);
+}
+
+$type-scale-step-gamma-l: 3;
+$type-scale-step-gamma-s: 0.53;
+$body-gamma-l: pow($t-type-scale-l, $type-scale-step-gamma-l) * 1rem;
+// $body-gamma-s: pow($t-type-scale-s, $type-scale-step-gamma-s) * 1rem;
+$body-gamma-s: 1.125rem;
+
+@mixin body-gamma($media: true, $current: 9999) {
+  @include responsive-type($body-gamma-l, $body-gamma-s, $media, $current);
+}
+
+$type-scale-step-delta-l: 2;
+$type-scale-step-delta-s: 0.53;
+$body-delta-l: pow($t-type-scale-l, $type-scale-step-delta-l) * 1rem;
+// $body-delta-s: pow($t-type-scale-s, $type-scale-step-delta-s) * 1rem;
+$body-delta-s: 1.125rem;
+
+@mixin body-delta($media: true, $current: 9999) {
+  @include responsive-type($body-delta-l, $body-delta-s, $media, $current);
+}
+
+$type-scale-step-epsilon-l: 1;
+$type-scale-step-epsilon-s: 0;
+$body-epsilon-l: pow($t-type-scale-l, $type-scale-step-epsilon-l) * 1rem;
+$body-epsilon-s: pow($t-type-scale-s, $type-scale-step-epsilon-s) * 1rem;
+
+@mixin body-epsilon($media: true, $current: 9999) {
+  @include responsive-type($body-epsilon-l, $body-epsilon-s, $media, $current);
+}
+
+$type-scale-step-zeta-l: 0.53;
+$type-scale-step-zeta-s: 0;
+//$body-zeta-l: pow($t-type-scale-l, $type-scale-step-zeta-l) * 1rem;
+$body-zeta-l: 1rem;
+$body-zeta-s: pow($t-type-scale-s, $type-scale-step-zeta-s) * 1rem;
+
+@mixin body-zeta($media: true, $current: 9999) {
+  @include responsive-type($body-zeta-l, $body-zeta-s, $media, $current);
+}
+
+$body-milli-l: 0.9375rem;
+$body-milli-s: $body-milli-l;
+
+@mixin body-milli($media: true, $current: 9999) {
+  font-size: $body-milli-l;
+}
+
+$body-micro-l: 0.875rem;
+$body-micro-s: 0.8125rem;
+
+@mixin body-micro($media: true, $current: 9999) {
+  @include responsive-type($body-giga-l, $body-giga-s, $media, $current);
+}
+
+$body-nano-l: 0.75rem;
+$body-nano-s: $body-nano-l;
+
+@mixin body-nano($media: true, $current: 9999) {
+  font-size: $body-nano-l;
+}
+
+// Spacing
+$vspace-xlarge-max: 225px;
+
+@mixin vspace-xlarge($top: true, $bottom: true, $type: margin, $modifier: 1, $media: true, $current: 9999) {
+  @include locked-spacing($top, $bottom, $type, $modifier, $media, $current, $vspace-xlarge-max, 'vertical', 75px);
+}
+
+$vspace-large-max: 125px;
+
+@mixin vspace-large($top: true, $bottom: true, $type: margin, $modifier: 1, $media: true, $current: 9999) {
+  @include locked-spacing(
+    $top,
+    $bottom,
+    $type,
+    $modifier,
+    $media,
+    $current,
+    $vspace-large-max,
+    'vertical',
+    $b-small,
+    60px
+  );
+}
+
+$vspace-small-max: 100px;
+
+@mixin vspace-small($top: true, $bottom: true, $type: margin, $modifier: 1, $media: true, $current: 9999) {
+  @include locked-spacing(
+    $top,
+    $bottom,
+    $type,
+    $modifier,
+    $media,
+    $current,
+    $vspace-small-max,
+    'vertical',
+    $b-small,
+    45px
+  );
+}
+
+$vspace-xsmall-max: 65px;
+
+@mixin vspace-xsmall($top: true, $bottom: true, $type: margin, $modifier: 1, $media: true, $current: 9999) {
+  @include locked-spacing(
+    $top,
+    $bottom,
+    $type,
+    $modifier,
+    $media,
+    $current,
+    $vspace-xsmall-max,
+    'vertical',
+    $b-small,
+    30px
+  );
+}
+
+$hspace-wrapper-max: 110px;
+
+@mixin hspace-wrapper($left: true, $right: true, $type: padding, $modifier: 1, $media: true, $current: 9999) {
+  @include locked-spacing(
+    $left,
+    $right,
+    $type,
+    $modifier,
+    $media,
+    $current,
+    $hspace-wrapper-max,
+    'horizontal',
+    $b-minspacing
+  );
+}
+
+@mixin maxwidth-wrapper($media: true, $content: $max-content, $current: 9999) {
+  $hspace-wrapper-tween: strip-unit($hspace-wrapper-max) / strip-unit($b-maxspacing) * 100vw;
+  $hspace-wrapper-min: strip-unit($hspace-wrapper-tween) / 100 * $b-small;
+
+  @if $media {
+    @if $current>$b-maxspacing {
+      max-width: calc(#{$content} + #{$hspace-wrapper-max * 2});
+
+      @media only screen and (max-width: $b-maxspacing) {
+        max-width: calc(#{$content} + #{$hspace-wrapper-tween * 2});
+      }
+
+      @media only screen and (max-width: $b-small) {
+        max-width: calc(#{$content} + #{$hspace-wrapper-min * 2});
+      }
+    } @else if $current>550 {
+      max-width: calc(#{$content} + #{$hspace-wrapper-tween * 2});
+
+      @media only screen and (max-width: $b-small) {
+        max-width: calc(#{$content} + #{$hspace-wrapper-min * 2});
+      }
+    } @else {
+      max-width: calc(#{$content} + #{$hspace-wrapper-min * 2});
+    }
+  } @else {
+    @if $current>strip-unit($b-maxspacing) {
+      max-width: calc(#{$content} + #{$hspace-wrapper-max * 2});
+    } @else if $current>strip-unit($b-small) {
+      max-width: calc(#{$content} + #{$hspace-wrapper-tween * 2});
+    } @else {
+      max-width: calc(#{$content} + #{$hspace-wrapper-min * 2});
+    }
+  }
+}
