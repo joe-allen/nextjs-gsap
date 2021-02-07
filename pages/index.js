@@ -1,12 +1,19 @@
 import { useEffect, useRef } from 'react';
 import Head from 'next/head'
-import styles from '../styles/Home.module.css'
 
+// components
+import Header from '../src/components/header';
+
+// scripts
 import gsap from 'gsap/dist/gsap';
 import { ScrollTrigger } from 'gsap/dist/ScrollTrigger';
+
+// styles
+import styles from '../styles/Home.module.css'
+
 gsap.registerPlugin( ScrollTrigger );
 
-export default function Home() {
+export default function Home({ sendToTest }) {
 	let vHeader = useRef();
 	let vMain = useRef();
 	let vFooter = useRef();
@@ -19,6 +26,7 @@ export default function Home() {
 	});
 
 	useEffect(() => {
+
 		gsap.to(box2.current, {
 			scrollTrigger: {
 				trigger: box2.current,
@@ -32,6 +40,7 @@ export default function Home() {
 			x: 100,
 			// rotation: 90
 		});
+
 	}, []);
 
 
@@ -52,7 +61,9 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-			<header id="vHeader" className={styles.vHeader} ref={vHeader}></header>
+			<Header title={sendToTest}></Header>
+
+			{/* <header id="vHeader" className={styles.vHeader} ref={vHeader}></header> */}
 
       <main ref={vMain} id="indexTagline" className={styles.main}>
 				<h1
@@ -76,4 +87,12 @@ export default function Home() {
       </footer>
     </>
   )
+}
+
+export async function getStaticProps(context) {
+	return {
+		props: {
+			sendToTest: 'fugggg nice'
+		}
+	}
 }
